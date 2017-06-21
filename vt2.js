@@ -191,28 +191,30 @@ function luoLauta(taulukko, ruutuja) {
         var rivi = document.createElement("tr");
         
         for (var j = 0; j < ruutuja; j++) {
-			var ruutu = luoRuutu(j, i);
-			
+            var ruutu = luoRuutu(j, i);
+            
             rivi.appendChild(ruutu);
         }
         
         taulukko.appendChild(rivi);
     }
-	
-	/**
-	 * Antaa halutun ruudun taulukosta.
-	 * @param rivi Halutun ruudun rivi.
-	 * @param sarake Halutun ruudun sarake.
-	 * @return Pyydetty ruutu tai null, jos ruutua ei löytynyt.
-	 */
-	taulukko.annaRuutu = function(rivi, sarake) {
-		var rivit = this.children;
-		if (rivi < 0 || rivi >= rivit.length) return null;
-		var solut = rivit[rivi];
-		if (sarake < 0 || sarake >= solut.length) return null;
-		
-		return solut[sarake];
-	};
+    
+    /**
+     * Antaa halutun ruudun taulukosta.
+     * @param vektori Halutun ruudun sijainnin osoittava vektori.
+     * @return Pyydetty ruutu tai null, jos ruutua ei löytynyt.
+     */
+    taulukko.annaRuutu = function(vektori) {
+        var rivi = vektori.getY();
+        var sarake = vektori.getX();
+        
+        var rivit = this.children;
+        if (rivi < 0 || rivi >= rivit.length) return null;
+        var solut = rivit[rivi].children;
+        if (sarake < 0 || sarake >= solut.length) return null;
+        
+        return solut[sarake];
+    };
 }
 
 
@@ -223,55 +225,89 @@ function luoLauta(taulukko, ruutuja) {
  * @return Luotu ruutu.
  */
 function luoRuutu(x, y) {
-	var ruutu = document.createElement("td");
-	ruutu.addEventListener("click", soluaKlikattu);
+    var ruutu = document.createElement("td");
+    ruutu.addEventListener("click", soluaKlikattu);
 
-	ruutu.koordinaatti = new Vektori(x, y);
-	
-	/**
-	 * Antaa rivin, jolla ruutu sijaitsee.
-	 * @return Rivi, jolla ruutu sijaitsee.
-	 */
-	ruutu.getRivi = function() {
-		return this.koordinaatti.y;
-	};
-	
-	/**
-	 * Antaa sarakkeen, jolla ruutu sijaitsee.
-	 * @return Sarake, jolla ruutu sijaitsee.
-	 */
-	ruutu.getSarake = function() {
-		return this.koordinaatti.x;
-	};
-	
-	/**
-	 * Antaa ruudun koordinaattivektorin.
-	 * @return Tämän ruudun koordinaattivektori.
-	 */
-	ruutu.getKoordinaatti = function() {
-		return this.koordinaatti;
-	};
-	
-	/**
-	 * Antaa vektorin, joka kertoo suunnan ja matkan tästä ruudusta annettuun ruutuun.
-	 * @param toinenRuutu Kohderuutu, johon vektori osoittaa tästä ruudusta.
-	 * @return Vektori, joka sisältää x- ja y-pituuden.
-	 */
-	ruutu.annaVektori = function(toinenRuutu) {
-		var vektori = this.koordinaatti.vahennaVektori(toinenRuutu.getKoordinaatti());
-		
-		return vektori;
-	};
-	
-	// /**
-	 // * Antaa tiedon, onko viereisissä ruuduissa nappuloita vai ei.
-	 // * @return true, jos jossain viereisessä ruudussa on nappula.
-	 // */
-	// ruutu.isNappuloitaVieressa = function() {
-		
-	// }
-	
-	return ruutu;
+    ruutu.sijainti = new Vektori(x, y);
+    
+    /**
+     * Antaa rivin, jolla ruutu sijaitsee.
+     * @return Rivi, jolla ruutu sijaitsee.
+     */
+    ruutu.getRivi = function() {
+        return this.sijainti.y;
+    };
+    
+    /**
+     * Antaa sarakkeen, jolla ruutu sijaitsee.
+     * @return Sarake, jolla ruutu sijaitsee.
+     */
+    ruutu.getSarake = function() {
+        return this.sijainti.x;
+    };
+    
+    /**
+     * Antaa ruudun sijaintivektorin.
+     * @return Tämän ruudun sijaintivektori.
+     */
+    ruutu.getSijainti = function() {
+        return this.sijainti;
+    };
+    
+    /**
+     * Palauttaa tiedon, onko tämä ruutu tyhjä.
+     * @return true, jos ruutu on vapaa.
+     */
+    ruutu.isVapaa = function() {
+        return !this.firstChild;
+    };
+    
+    /**
+     * Antaa vektorin, joka kertoo suunnan ja matkan tästä ruudusta annettuun ruutuun.
+     * @param toinenRuutu Kohderuutu, johon vektori osoittaa tästä ruudusta.
+     * @return Vektori, joka sisältää x- ja y-pituuden.
+     */
+    ruutu.laskeVektori = function(toinenRuutu) {
+        var vektori = toinenRuutu.getSijainti().vahennaVektori(this.getSijainti());
+        
+        return vektori;
+    };
+
+    /**
+     * Laskee vektorin avulla sijainnin, jossa oleva ruutu palautetaan.
+     * @param vektori Vektori, joka lisätään tämän ruudun sijaintivektoriin.
+     * @return Lasketussa sijainnissa sijaitseva ruutu tai null, jos ruutua ei ole.
+     */
+    ruutu.lisaaVektori = function(vektori) {
+        var sijainti = this.getSijainti().lisaaVektori(vektori);
+        var lauta = document.getElementsByTagName("body")[0].getElementsByTagName("table")[0];
+        
+        return lauta.annaRuutu(sijainti);
+    };
+    
+    /**
+     * Poistaa nappulan, jos sellainen löytyy tästä ruudusta.
+     */
+    ruutu.poistaNappula = function() {
+        this.removeChild(this.firstChild);
+    };
+    
+    // /**
+     // * Kertoo, onko annettu ruutu sama
+     // */
+    // ruutu.equals(toinenRuutu) {
+        // return this.getSijainti().equals(toinenRuutu.getSijainti());
+    // }
+    
+    // /**
+     // * Antaa tiedon, onko viereisissä ruuduissa nappuloita vai ei.
+     // * @return true, jos jossain viereisessä ruudussa on nappula.
+     // */
+    // ruutu.isNappuloitaVieressa = function() {
+        
+    // }
+    
+    return ruutu;
 }
 
 
@@ -289,7 +325,7 @@ function soluaKlikattu(event) {
     
     if (!valittuPelinappula || valittuPelinappula.parentNode === this) return;
     
-	valittuPelinappula.siirra(ruutu);
+    valittuPelinappula.siirra(ruutu);
     // ruutu.appendChild(valittuPelinappula);
     // valittuPelinappula.poistaValinta();
     // valittuPelinappula = null;
@@ -330,142 +366,280 @@ function asetaNappulat(taulukko, rivimaara, suunta) {
             if (suunta === 0) indeksi = j;
             
             if (indeksi < solut.length / 2 && indeksi < rivimaara) {
-				var nappula = luoNappula("red", "red", "#00ff00", 0);
+                var nappula = luoNappula("red", "magenta", "#00ff00", 0);
                 solut[j].appendChild(nappula);
             }
             
             if (indeksi >= solut.length / 2 && indeksi >= solut.length - rivimaara) {
-                var nappula = luoNappula("blue", "blue", "#00ff00", 1);
-				solut[j].appendChild(nappula);
+                var nappula = luoNappula("blue", "cyan", "#00ff00", 1);
+                solut[j].appendChild(nappula);
             }
         }
     }
+    
+    taulukko.suunta = suunta;
+    
+    /**
+     * Antaa pelinappuloiden asettelun suunnan.
+     * @return Pelinappuloiden asettelun suunta. Pystysuunta = 0, vaakasuunta = 1.
+     */
+    taulukko.getSuunta = function() {
+        return this.suunta;
+    };
 }
 
 
 /**
  * Luo pelinappulan annetulla kuvalla ja kuvan vaihtoehtoisella tekstillä.
  * @param vari Pelinappulan väri.
- * @param alt Kuvan vaihtoehtoinen teksti.
+ * @param kuningasVari Pelinappulan väri, kun siitä tulee kuningasnappula.
  * @param valittuVari Pelinappulan väri, kun se on valittuna.
  * @param pelaaja Pelaaja, jonka nappula tämä on.
  * @return Luotu pelinappula.
  */
-function luoNappula(vari, alt, valittuVari, pelaaja) {
+function luoNappula(vari, kuningasVari, valittuVari, pelaaja) {
     var nappula = luoYmpyra(vari, 20);
     nappula.addEventListener("click", pelinappulaaKlikattu);
     
     nappula.vari = vari;
-	nappula.valittuVari = valittuVari;
-	nappula.pelaaja = pelaaja;
-	
-	/**
-	 * Muuttaa pelinappulan ulkonäön valitun pelinappulan näköiseksi.
-	 */
-	nappula.valitse = function() {
-		this.vaihdaVaria(this.valittuVari);
-	};
-	
-	/**
-	 * Muuttaa pelinappulan ulkonäön alkuperäiseksi.
-	 */
-	nappula.poistaValinta = function() {
-		this.vaihdaVaria(this.vari);
-	};
-	
-	/**
-	 * Antaa pelinappulan omistavan pelaajan numeron.
-	 * @return Pelinappulan omistavan pelaajan numero.
-	 */
-	nappula.getPelaaja = function() {
-		return this.pelaaja;
-	};
-	
-	/**
-	 * Antaa ruudun, jossa tämä nappula sijaitsee.
-	 * @return Ruutu, jossa tämä nappula sijaitsee.
-	 */
-	nappula.getRuutu = function() {
-		return this.parentNode;
-	};
-	
-	/**
-	 * Antaa tiedon, onko tämä nappula tällä hetkellä valittu nappula.
-	 * @return true, jos tämä nappula on tällä hetkellä valittuna.
-	 */
-	nappula.isValittu = function() {
-		return this === valittuPelinappula;
-	}
-	
-	/**
-	 * Kertoo totuusarvolla, voiko nykyistä nappulaa siirtää haluttuun ruutuun.
-	 * @param ruutu Ruutu, johon pelinappula haluttaisiin siirtää.
-	 * @return true, jos siirto on mahdollinen.
-	 */
-	nappula.voiSiirtaa = function(ruutu) {
-		var nykyinenRuutu = this.getRuutu();
-		
-		if (this.isNappuloitaVieressa()) {
-			var vihollisenNappulat = this.getNappulatVieressa();
+    nappula.valittuVari = valittuVari;
+    nappula.kuningasVari = kuningasVari;
+    nappula.pelaaja = pelaaja;
+    nappula.kuningas = false;
+    
+    /**
+     * Muuttaa pelinappulan ulkonäön valitun pelinappulan näköiseksi.
+     */
+    nappula.valitse = function() {
+        this.vaihdaVaria(this.valittuVari);
+    };
+    
+    /**
+     * Muuttaa pelinappulan ulkonäön alkuperäiseksi.
+     */
+    nappula.poistaValinta = function() {
+        this.vaihdaVaria(this.vari);
+    };
+    
+    /**
+     * Muuttaa tämän nappulan kuningasnappulaksi.
+     */
+    nappula.muutaKuninkaaksi = function() {
+        this.kuningas = true;
+        this.vaihdaVaria(this.kuningasVari);
+    };
+    
+    /**
+     * Kertoo, onko tämä nappula kuningasnappula.
+     * @return true, jos tämä nappula on kuningasnappula.
+     */
+    nappula.isKuningas = function() {
+        return this.kuningas;
+    }
+    
+    /**
+     * Antaa pelinappulan omistavan pelaajan numeron.
+     * @return Pelinappulan omistavan pelaajan numero.
+     */
+    nappula.getPelaaja = function() {
+        return this.pelaaja;
+    };
+    
+    /**
+     * Antaa ruudun, jossa tämä nappula sijaitsee.
+     * @return Ruutu, jossa tämä nappula sijaitsee.
+     */
+    nappula.getRuutu = function() {
+        return this.parentNode;
+    };
+    
+    /**
+     * Antaa taulukon tämän nappulan sallituista ruuduista.
+     * @param etaisyys Etäisyys kulmittain ruutuina, kuinka kaukana ruutu saa
+     * maksimissaan olla.
+     * @return Taulukko ruuduista, joihin tämä nappula voi yhdellä askeleella
+     * liikkua.
+     */
+    nappula.getSallitutRuudut = function(etaisyys) {
+        var taulukko = document.getElementsByTagName("body")[0].getElementsByTagName("table")[0];
 
-			for (var i = 0; i < vihollisenNappulat.length; i++) {
-				var ruutu = vihollisenNappulat[i].getRuutu();
-				var haluttuSuunta = nykyinenRuutu.annaVektori(ruutu);
-				
-				
-			}
-		}
-		
-	};
-	
-	/**
-	 * Siirtää pelinappulan annettuun ruutuun, jos se on mahdollista ja
-	 * siirtämisen jälkeen antaa tarvittaessa vuoron vastustajalle.
-	 * @param ruutu Ruutu, johon nappulaa yritetään siirtää.
-	 */
-	nappula.siirra = function(ruutu) {
-		if (this.voiSiirtaa(ruutu)) {
-			
-		}
-	};
-	
-	/**
-	 * Antaa tiedon, onko viereisissä ruuduissa vastustajan nappuloita vai ei.
-	 * @return true, jos jossain viereisessä ruudussa on vastustajan nappula.
-	 */
-	nappula.isNappuloitaVieressa = function() {
-		if (this.getNappulatVieressa().length > 0) return true;
-		return false;
-	};
+        var sallitut = [];
+        
+        var pelaaja = this.getPelaaja() ? -1 : 1;
+        for (var i = 1; i <= etaisyys; i++) {
+            if (!taulukko.getSuunta() || this.isKuningas()) { // Suunta == pysty
+                sallitut.push(this.getRuutu().lisaaVektori(new Vektori(pelaaja, -i)));
+                sallitut.push(this.getRuutu().lisaaVektori(new Vektori(pelaaja, i)));
+            }
+            if (taulukko.getSuunta() || this.isKuningas()) { // Suunta == vaaka
+                sallitut.push(this.getRuutu().lisaaVektori(new Vektori(-i, pelaaja)));
+                sallitut.push(this.getRuutu().lisaaVektori(new Vektori(i, pelaaja)));
+            }
+        }
+        
+        return sallitut;
+    };
+    
+    /**
+     * Antaa tiedon, onko tämä nappula tällä hetkellä valittu nappula.
+     * @return true, jos tämä nappula on tällä hetkellä valittuna.
+     */
+    nappula.isValittu = function() {
+        return this === valittuPelinappula;
+    };
+    
+    /**
+     * Kertoo totuusarvolla, voiko nykyistä nappulaa siirtää haluttuun ruutuun.
+     * @param ruutu Ruutu, johon pelinappula haluttaisiin siirtää.
+     * @return true, jos siirto on mahdollinen.
+     */
+    nappula.voiSiirtaa = function(ruutu) {
+        var nykyinenRuutu = this.getRuutu();
+        // var haluttuSuunta = nykyinenRuutu.laskeVektori(ruutu);
 
-	/**
-	 * Antaa listan viereisissä ruuduissa olevista vihollisen nappuloista.
-	 * @return Lista viereisissä ruuduissa olevista vihollisen nappuloista.
-	 */
-	nappula.getNappulatVieressa = function() {
-		var nykyinenRuutu = getRuutu();
-		var taulukko = document.getElementsByTagName("body")[0].getElementsByTagName("table")[0];
-		var vihollisenNappulat = [];
-		
-		// Tammessa nappuloita voi olla vain kulmittaisissa ruuduissa
-		var rivit = [-1, 1];
-		var sarakkeet = [-1, 1];
-		
-		for (var i = 0; i < rivit.length; i++) {
-			for (var j = 0; j < sarakkeet.length; j++) {
-				var tarkasteltavaRivi = nykyinenRuutu.getRivi() + rivit[i];
-				var tarkasteltavaSarake = nykyinenRuutu.getSarake() + sarakkeet[j];
-				var tarkasteltava = taulukko.annaRuutu(
-						tarkasteltavaRivi, tarkasteltavaSarake);
-				
-				if (tarkasteltava && tarkasteltava.firstChild &&
-						tarkasteltava.firstChild.getPelaaja() !== this.getPelaaja()) {
-					vihollisenNappulat.push(tarkasteltava.firstChild);
-				}
-			}
-		}
-		return vihollisenNappulat;
-	};
+        if (!ruutu.isVapaa()) return false;
+
+        if (!this.getSallitutRuudut(2).includes(ruutu)) return false;
+        
+        if (this.isNappuloitaVieressa()) {
+            var vihollisenNappulat = this.getNappulatVieressa();
+
+            for (var i = 0; i < vihollisenNappulat.length; i++) {
+                var vihollisenRuutu = vihollisenNappulat[i].getRuutu();
+                
+                var suunta = nykyinenRuutu.laskeVektori(vihollisenRuutu);
+                if (vihollisenRuutu.lisaaVektori(suunta) === ruutu) {
+                    return true;
+                }
+            }
+        }
+        if (this.getSallitutRuudut(1).includes(ruutu)) return true;
+        return false;
+    };
+    
+    /**
+     * Kertoo totuusarvolla, voiko pelaaja syödä vastustajan nappulan seuraavalla
+     * siirrolla.
+     * @return true, jos syömissiirto on mahdollinen.
+     */
+    nappula.voiSyoda = function() {
+        if (!this.isNappuloitaVieressa()) return false;
+        
+        var nykyinenRuutu = this.getRuutu();
+        var vihollisenNappulat = this.getNappulatVieressa();
+
+        for (var i = 0; i < vihollisenNappulat.length; i++) {
+            var vihollisenRuutu = vihollisenNappulat[i].getRuutu();
+            
+            var suunta = nykyinenRuutu.laskeVektori(vihollisenRuutu);
+            var hyppyRuutu = vihollisenRuutu.lisaaVektori(suunta);
+            if (hyppyRuutu && hyppyRuutu.isVapaa()) {
+                return true;
+            }
+        }
+        
+        return false;
+    };
+    
+    /**
+     * Palauttaa vihollisen nappulan, joka tulisi syödyksi, jos annettuun ruutuun
+     * hypättäisiin.
+     * @param ruutu Ruutu, johon hyppääminen aiheuttaisi syönnin.
+     * @return Vihollisen syötävä nappula tai null, jos nappulaa ei ole.
+     */
+    nappula.getSyotavaNappula = function(ruutu) {
+        var nykyinenRuutu = this.getRuutu();
+        var vihollisenNappulat = this.getNappulatVieressa();
+
+        for (var i = 0; i < vihollisenNappulat.length; i++) {
+            var vihollisenRuutu = vihollisenNappulat[i].getRuutu();
+            
+            var suunta = nykyinenRuutu.laskeVektori(vihollisenRuutu);
+            if (vihollisenRuutu.lisaaVektori(suunta) === ruutu) {
+                return vihollisenNappulat[i];
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Siirtää pelinappulan annettuun ruutuun, jos se on mahdollista ja
+     * antaa tarvittaessa vuoron vastustajalle.
+     * @param ruutu Ruutu, johon nappulaa yritetään siirtää.
+     */
+    nappula.siirra = function(ruutu) {
+        if (!this.voiSiirtaa(ruutu)) {
+            return;
+        }
+        
+        if (!this.voiSyoda()) {
+            ruutu.appendChild(this);
+            this.paataVuoro();
+            return;
+        }
+        
+        if (this.getRuutu().laskeVektori(ruutu).getPituus() >= 2) {
+            var syotava = this.getSyotavaNappula(ruutu);
+            if (syotava) syotava.parentNode.poistaNappula();
+            if (!this.voiSyoda()) {
+                this.paataVuoro();
+                return;
+            }
+        }
+    };
+
+    /**
+     * Tekee vuoron lopettamiseen liittyvät toimenpiteet ja vaihtaa
+     * vuoron vastustajalle.
+     */
+    nappula.paataVuoro = function() {
+        if (this === valittuPelinappula) {
+            this.poistaValinta();
+            valittuPelinappula = null;
+        }
+        
+        document.getElementById("vuoro-osoitin").vaihdaVuoroa();
+    };
+    
+    /**
+     * Antaa tiedon, onko viereisissä ruuduissa vastustajan nappuloita vai ei.
+     * @return true, jos jossain viereisessä ruudussa on vastustajan nappula.
+     */
+    nappula.isNappuloitaVieressa = function() {
+        if (this.getNappulatVieressa().length > 0) return true;
+        return false;
+    };
+
+    /**
+     * Antaa listan viereisissä ruuduissa olevista vihollisen nappuloista.
+     * @return Lista viereisissä ruuduissa olevista vihollisen nappuloista.
+     */
+    nappula.getNappulatVieressa = function() {
+        var nykyinenRuutu = this.getRuutu();
+        var taulukko = document.getElementsByTagName("body")[0].getElementsByTagName("table")[0];
+        var vihollisenNappulat = [];
+        
+        // Tammessa nappuloita voi olla vain kulmittaisissa ruuduissa
+        var rivit = [-1, 1];
+        var sarakkeet = [-1, 1];
+        
+        for (var i = 0; i < rivit.length; i++) {
+            for (var j = 0; j < sarakkeet.length; j++) {
+                var tarkasteltavaRivi = nykyinenRuutu.getRivi() + rivit[i];
+                var tarkasteltavaSarake = nykyinenRuutu.getSarake() + sarakkeet[j];
+                var tarkasteltavaSijainti = new Vektori(tarkasteltavaSarake,
+                                                        tarkasteltavaRivi);
+                var tarkasteltava = taulukko.annaRuutu(tarkasteltavaSijainti);
+                
+                if (tarkasteltava && tarkasteltava.firstChild &&
+                        tarkasteltava.firstChild.getPelaaja() !== this.getPelaaja()) {
+                    vihollisenNappulat.push(tarkasteltava.firstChild);
+                }
+            }
+        }
+        return vihollisenNappulat;
+    };
 
     return nappula;
 }
@@ -492,17 +666,17 @@ function luoYmpyra(vari, sade) {
     ympyra.setAttribute("style", "stroke:#006600; fill:" + vari);
     
     /**
-	 * Vaihtaa ympyrän väriä annetun värin mukaiseksi.
-	 * @param vari Väri, jolla ympyrä värjätään.
-	 */
+     * Vaihtaa ympyrän väriä annetun värin mukaiseksi.
+     * @param vari Väri, jolla ympyrä värjätään.
+     */
     ympyra.vaihdaVaria = function(vari) {
         this.setAttribute("style", "stroke:#006600; fill:" + vari);
     };
     
     /**
-	 * Muuttaa ympyrän kokoa annetun säteen mukaiseksi.
-	 * @param uusiSade Uusi säde, joka ympyrälle annetaan.
-	 */
+     * Muuttaa ympyrän kokoa annetun säteen mukaiseksi.
+     * @param uusiSade Uusi säde, joka ympyrälle annetaan.
+     */
     ympyra.muutaKokoa = function(uusiSade) {
         this.setAttribute("cx", uusiSade);
         this.setAttribute("cy", uusiSade);
@@ -511,18 +685,18 @@ function luoYmpyra(vari, sade) {
     
     svg.appendChild(ympyra);
 
-	/**
-	 * Vaihtaa ympyrän väriä annetun värin mukaiseksi.
-	 * @param vari Väri, jolla ympyrä värjätään.
-	 */
+    /**
+     * Vaihtaa ympyrän väriä annetun värin mukaiseksi.
+     * @param vari Väri, jolla ympyrä värjätään.
+     */
     svg.vaihdaVaria = function(vari) {
         svg.firstChild.vaihdaVaria(vari);
     };
     
-	/**
-	 * Muuttaa ympyrän kokoa annetun säteen mukaiseksi.
-	 * @param uusiSade Uusi säde, joka ympyrälle annetaan.
-	 */
+    /**
+     * Muuttaa ympyrän kokoa annetun säteen mukaiseksi.
+     * @param uusiSade Uusi säde, joka ympyrälle annetaan.
+     */
     svg.muutaKokoa = function(uusiSade) {
         svg.setAttribute("width", (uusiSade * 2) + "px");
         svg.setAttribute("height", (uusiSade * 2) + "px");
@@ -540,8 +714,8 @@ function luoYmpyra(vari, sade) {
  * @param event Tapahtuma, joka tämän funktioajon aiheutti.
  */
 function pelinappulaaKlikattu(event) {
-	event.stopPropagation();
-	
+    event.stopPropagation();
+    
     var nappula = event.target;
     if (!nappula || nappula.nodeName.toLowerCase() !== "svg")
         nappula = event.target.parentNode;
@@ -549,12 +723,12 @@ function pelinappulaaKlikattu(event) {
         nappula = event.target.getElementsByTagName("svg")[0];
     if (!nappula || nappula.nodeName.toLowerCase() !== "svg") return;
     
-	var vuoroOsoitin = document.getElementById("vuoro-osoitin");
-	if (vuoroOsoitin.isVuoro(nappula.getPelaaja())) {
-		if (valittuPelinappula) valittuPelinappula.poistaValinta();
-		nappula.valitse();
-		valittuPelinappula = nappula;
-	}
+    var vuoroOsoitin = document.getElementById("vuoro-osoitin");
+    if (vuoroOsoitin.isVuoro(nappula.getPelaaja())) {
+        if (valittuPelinappula) valittuPelinappula.poistaValinta();
+        nappula.valitse();
+        valittuPelinappula = nappula;
+    }
 }
 
 
@@ -602,7 +776,7 @@ function etsiValittu(radiot) {
 function sovitaNayttoon() {
     var body = document.getElementById("ruudukko").parentNode;
     var vuoroOsoitin = document.getElementById("vuoro-osoitin");
-	
+    
     var leveys = window.innerWidth;
     var korkeus = window.innerHeight;
     
@@ -612,8 +786,8 @@ function sovitaNayttoon() {
     
     var lapset = body.children;
     for (var i = 0; i < lapset.length; i++) {
-		if (lapset[i] === vuoroOsoitin) continue;
-		
+        if (lapset[i] === vuoroOsoitin) continue;
+        
         var tyyli = window.getComputedStyle(lapset[i]);
         if (!tyyli) continue;
         yhtKorkeus += parseFloat(tyyli.getPropertyValue("margin-top"));
@@ -665,7 +839,7 @@ function naytaVuoro() {
     if (!vuoroOsoitin) {
         vuoroOsoitin = luoVuoroOsoitin();
     }
-	vuoroOsoitin.alusta();
+    vuoroOsoitin.alusta();
 }
 
 
@@ -674,38 +848,38 @@ function naytaVuoro() {
  * @return Uusi vuoro-osoitin.
  */
 function luoVuoroOsoitin() {
-	var varit = ["red", "blue"];
-	
+    var varit = ["red", "blue"];
+    
     var vuoroOsoitin = luoYmpyra(varit[0], 30);
     vuoroOsoitin.setAttribute("id", "vuoro-osoitin");
     vuoroOsoitin.vuoro = 0;
     
-	/**
-	 * Vaihtaa vuoroa tämänhetkiseltä pelaajalta toiselle.
-	 */
-	vuoroOsoitin.vaihdaVuoroa = function() {
+    /**
+     * Vaihtaa vuoroa tämänhetkiseltä pelaajalta toiselle.
+     */
+    vuoroOsoitin.vaihdaVuoroa = function() {
         if (this.vuoro < 0 || this.vuoro >= varit.length) this.vuoro = 0;
         
         this.vuoro = 1 - this.vuoro; // Vaihtaa 0 -> 1, 1 -> 0
-		this.vaihdaVaria(varit[this.vuoro]);
+        this.vaihdaVaria(varit[this.vuoro]);
     };
-	
-	/**
-	 * Palauttaa vuoron pelin aloittajalle.
-	 */
-	vuoroOsoitin.alusta = function() {
-		this.vuoro = 0;
-		this.vaihdaVaria(varit[this.vuoro]);
-	};
-	
-	/**
-	 * Palauttaa tiedon, onko annetun pelinappulan pelaajalla pelivuoro.
-	 * @param pelaaja Tarkasteltavan pelaajan numero.
-	 * @return true, jos pelinappulan omistavalla pelaajalla on pelivuoro.
-	 */
-	vuoroOsoitin.isVuoro = function(pelaaja) {
-		return this.vuoro === pelaaja;
-	};
+    
+    /**
+     * Palauttaa vuoron pelin aloittajalle.
+     */
+    vuoroOsoitin.alusta = function() {
+        this.vuoro = 0;
+        this.vaihdaVaria(varit[this.vuoro]);
+    };
+    
+    /**
+     * Palauttaa tiedon, onko annetun pelinappulan pelaajalla pelivuoro.
+     * @param pelaaja Tarkasteltavan pelaajan numero.
+     * @return true, jos pelinappulan omistavalla pelaajalla on pelivuoro.
+     */
+    vuoroOsoitin.isVuoro = function(pelaaja) {
+        return this.vuoro === pelaaja;
+    };
     
     var div = document.createElement("div");
     div.appendChild(vuoroOsoitin);
@@ -723,8 +897,8 @@ function luoVuoroOsoitin() {
  * @param y Vektorin pystykoordinaatti.
  */
 function Vektori(x, y) {
-	this.x = x;
-	this.y = y;
+    this.x = x;
+    this.y = y;
 }
 
 
@@ -733,7 +907,7 @@ function Vektori(x, y) {
  * @return Vektorin x-koordinaatti.
  */
 Vektori.prototype.getX = function() {
-	return this.x;
+    return this.x;
 };
 
 
@@ -742,18 +916,29 @@ Vektori.prototype.getX = function() {
  * @return Vektorin y-koordinaatti.
  */
 Vektori.prototype.getY = function() {
-	return this.y;
+    return this.y;
 };
 
 
 /**
  * Vähentää annetun vektorin nykyisestä vektorista.
- * @param toinenVektori Vähennettävä vektori.
+ * @param vektori Vähennettävä vektori.
  * @return Tulosvektori.
  */
-Vektori.prototype.vahennaVektori = function(toinenVektori) {
-	var tulos = new Vektori(this.getX() - toinenVektori.getX(), this.getY() - toinenVektori.getY());
-	return tulos;
+Vektori.prototype.vahennaVektori = function(vektori) {
+    var tulos = new Vektori(this.getX() - vektori.getX(), this.getY() - vektori.getY());
+    return tulos;
+};
+
+
+/**
+ * Lisää annetun vektorin nykyiseen vektoriin.
+ * @param vektori Lisättävä vektori.
+ * @return Tulosvektori.
+ */
+Vektori.prototype.lisaaVektori = function(vektori) {
+    var tulos = new Vektori(this.getX() + vektori.getX(), this.getY() + vektori.getY());
+    return tulos;
 };
 
 
@@ -764,5 +949,14 @@ Vektori.prototype.vahennaVektori = function(toinenVektori) {
  * @return true, jos vektorit ovat samoja.
  */
 Vektori.prototype.equals = function(vektori) {
-	return this.getX() === vektori.getX() && this.getY() === vektori.getY();
+    return this.getX() === vektori.getX() && this.getY() === vektori.getY();
+};
+
+
+/**
+ * Antaa tämän vektorin pituuden.
+ * @return Vektorin pituus.
+ */
+Vektori.prototype.getPituus = function() {
+    return Math.sqrt((this.getX() * this.getX()) + (this.getY() * this.getY()));
 };
