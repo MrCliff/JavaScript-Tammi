@@ -226,15 +226,14 @@ function luoRuutu(x, y) {
 	var ruutu = document.createElement("td");
 	ruutu.addEventListener("click", soluaKlikattu);
 
-	ruutu.x = x;
-	ruutu.y = y;
+	ruutu.koordinaatti = new Vektori(x, y);
 	
 	/**
 	 * Antaa rivin, jolla ruutu sijaitsee.
 	 * @return Rivi, jolla ruutu sijaitsee.
 	 */
 	ruutu.getRivi = function() {
-		return this.y;
+		return this.koordinaatti.y;
 	};
 	
 	/**
@@ -242,7 +241,26 @@ function luoRuutu(x, y) {
 	 * @return Sarake, jolla ruutu sijaitsee.
 	 */
 	ruutu.getSarake = function() {
-		return this.x;
+		return this.koordinaatti.x;
+	};
+	
+	/**
+	 * Antaa ruudun koordinaattivektorin.
+	 * @return Tämän ruudun koordinaattivektori.
+	 */
+	ruutu.getKoordinaatti = function() {
+		return this.koordinaatti;
+	};
+	
+	/**
+	 * Antaa vektorin, joka kertoo suunnan ja matkan tästä ruudusta annettuun ruutuun.
+	 * @param toinenRuutu Kohderuutu, johon vektori osoittaa tästä ruudusta.
+	 * @return Vektori, joka sisältää x- ja y-pituuden.
+	 */
+	ruutu.annaVektori = function(toinenRuutu) {
+		var vektori = this.koordinaatti.vahennaVektori(toinenRuutu.getKoordinaatti());
+		
+		return vektori;
 	};
 	
 	// /**
@@ -385,14 +403,16 @@ function luoNappula(vari, alt, valittuVari, pelaaja) {
 	 * @return true, jos siirto on mahdollinen.
 	 */
 	nappula.voiSiirtaa = function(ruutu) {
-		var nykyinenRuutu = getRuutu();
+		var nykyinenRuutu = this.getRuutu();
 		
 		if (this.isNappuloitaVieressa()) {
 			var vihollisenNappulat = this.getNappulatVieressa();
 
 			for (var i = 0; i < vihollisenNappulat.length; i++) {
-				var ruutu = vihollisenNappulat[i];
-				var suunta = 
+				var ruutu = vihollisenNappulat[i].getRuutu();
+				var haluttuSuunta = nykyinenRuutu.annaVektori(ruutu);
+				
+				
 			}
 		}
 		
@@ -695,3 +715,54 @@ function luoVuoroOsoitin() {
 
     return vuoroOsoitin;
 }
+
+
+/**
+ * Luo uuden vektorin annetuilla x- ja y-koordinaattiarvoilla.
+ * @param x Vektorin vaakakoordinaatti.
+ * @param y Vektorin pystykoordinaatti.
+ */
+function Vektori(x, y) {
+	this.x = x;
+	this.y = y;
+}
+
+
+/**
+ * Antaa vektorin x-koordinaatin.
+ * @return Vektorin x-koordinaatti.
+ */
+Vektori.prototype.getX = function() {
+	return this.x;
+};
+
+
+/**
+ * Antaa vektorin y-koordinaatin.
+ * @return Vektorin y-koordinaatti.
+ */
+Vektori.prototype.getY = function() {
+	return this.y;
+};
+
+
+/**
+ * Vähentää annetun vektorin nykyisestä vektorista.
+ * @param toinenVektori Vähennettävä vektori.
+ * @return Tulosvektori.
+ */
+Vektori.prototype.vahennaVektori = function(toinenVektori) {
+	var tulos = new Vektori(this.getX() - toinenVektori.getX(), this.getY() - toinenVektori.getY());
+	return tulos;
+};
+
+
+/**
+ * Vertailee tätä vektoria annettuun vektoriin ja palauttaa tiedon,
+ * ovatko ne samoja.
+ * @param vektori Vektori, johon verrataan.
+ * @return true, jos vektorit ovat samoja.
+ */
+Vektori.prototype.equals = function(vektori) {
+	return this.getX() === vektori.getX() && this.getY() === vektori.getY();
+};
