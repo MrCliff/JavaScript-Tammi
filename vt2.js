@@ -507,6 +507,19 @@ function luoNappula(vari, kuningasVari, valittuVari, pelaaja) {
     };
     
     /**
+     * Antaa tiedon, voiko tätä nappulaa liikuttaa.
+     * @return true, jos tätä nappulaa voi liikuttaa.
+     */
+    nappula.voiLiikuttaa = function() {
+        var sallitut = this.getSallitutRuudut(2);
+        for (var i = 0; i < sallitut.length; i++) {
+            if (this.voiSiirtaa(sallitut[i])) return true;
+        }
+        
+        return false;
+    }
+    
+    /**
      * Kertoo totuusarvolla, voiko nykyistä nappulaa siirtää haluttuun ruutuun.
      * @param ruutu Ruutu, johon pelinappula haluttaisiin siirtää.
      * @return true, jos siirto on mahdollinen.
@@ -966,7 +979,7 @@ function luoVuoroOsoitin() {
         
         for (var i = 0; i < kaikki.length; i++) {
             var nappula = kaikki[i];
-            if (this.isVuoro(nappula.getPelaaja())) {
+            if (this.isVuoro(nappula.getPelaaja()) && nappula.voiLiikuttaa()) {
                 pelaajan.push(nappula);
                 
                 if (nappula.voiSyoda()) {
