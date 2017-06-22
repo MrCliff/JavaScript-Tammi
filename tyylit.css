@@ -46,3 +46,21 @@ fieldset div {
     right: 1em;
     bottom: 1em;
 }
+
+#voitto-ilmoitus {
+    text-align: center;
+    position: fixed;
+    bottom: 1em;
+    width: 100%;
+    font-size: 2em;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+}
+
+.punainen {
+    color: red;
+}
+
+.sininen {
+    color: blue;
+}

@@ -215,6 +215,24 @@ function luoLauta(taulukko, ruutuja) {
         
         return solut[sarake];
     };
+    
+    /**
+     * Antaa taulukon kaikista laudalla olevista pelinappuloista.
+     * @return Taulukko kaikista laudalla olevista pelinappuloista.
+     */
+    taulukko.getKaikkiNappulat = function() {
+        var nappulat = [];
+        
+        var rivit = this.children;
+        for (var i = 0; i < rivit.length; i++) {
+            var ruudut = rivit[i].children;
+            for (var j = 0; j < ruudut.length; j++) {
+                var ruutu = ruudut[j];
+                if (ruutu.firstChild) nappulat.push(ruutu.firstChild);
+            }
+        }
+        return nappulat;
+    };
 }
 
 
@@ -292,21 +310,6 @@ function luoRuutu(x, y) {
         this.removeChild(this.firstChild);
     };
     
-    // /**
-     // * Kertoo, onko annettu ruutu sama
-     // */
-    // ruutu.equals(toinenRuutu) {
-        // return this.getSijainti().equals(toinenRuutu.getSijainti());
-    // }
-    
-    // /**
-     // * Antaa tiedon, onko viereisissä ruuduissa nappuloita vai ei.
-     // * @return true, jos jossain viereisessä ruudussa on nappula.
-     // */
-    // ruutu.isNappuloitaVieressa = function() {
-        
-    // }
-    
     return ruutu;
 }
 
@@ -326,11 +329,6 @@ function soluaKlikattu(event) {
     if (!valittuPelinappula || valittuPelinappula.parentNode === this) return;
     
     valittuPelinappula.siirra(ruutu);
-    // ruutu.appendChild(valittuPelinappula);
-    // valittuPelinappula.poistaValinta();
-    // valittuPelinappula = null;
-    
-    // document.getElementById("vuoro-osoitin").vaihdaVuoroa();
 }
 
 
@@ -406,6 +404,7 @@ function luoNappula(vari, kuningasVari, valittuVari, pelaaja) {
     nappula.kuningasVari = kuningasVari;
     nappula.pelaaja = pelaaja;
     nappula.kuningas = false;
+    nappula.voiVaihtaa = true;
     
     /**
      * Muuttaa pelinappulan ulkonäön valitun pelinappulan näköiseksi.
@@ -418,7 +417,8 @@ function luoNappula(vari, kuningasVari, valittuVari, pelaaja) {
      * Muuttaa pelinappulan ulkonäön alkuperäiseksi.
      */
     nappula.poistaValinta = function() {
-        this.vaihdaVaria(this.vari);
+        if (this.isKuningas()) this.vaihdaVaria(this.kuningasVari);
+        else this.vaihdaVaria(this.vari);
     };
     
     /**
@@ -467,13 +467,31 @@ function luoNappula(vari, kuningasVari, valittuVari, pelaaja) {
         
         var pelaaja = this.getPelaaja() ? -1 : 1;
         for (var i = 1; i <= etaisyys; i++) {
-            if (!taulukko.getSuunta() || this.isKuningas()) { // Suunta == pysty
-                sallitut.push(this.getRuutu().lisaaVektori(new Vektori(pelaaja, -i)));
-                sallitut.push(this.getRuutu().lisaaVektori(new Vektori(pelaaja, i)));
+            if (!taulukko.getSuunta()) { // Suunta == pysty
+                var ruutu1 = this.getRuutu().lisaaVektori(new Vektori(pelaaja * i, -i));
+                var ruutu2 = this.getRuutu().lisaaVektori(new Vektori(pelaaja * i, i));
+                if (ruutu1) sallitut.push(ruutu1);
+                if (ruutu2) sallitut.push(ruutu2);
+
+                if (this.isKuningas()) {
+                    var ruutu1 = this.getRuutu().lisaaVektori(new Vektori(pelaaja * -i, -i));
+                    var ruutu2 = this.getRuutu().lisaaVektori(new Vektori(pelaaja * -i, i));
+                    if (ruutu1) sallitut.push(ruutu1);
+                    if (ruutu2) sallitut.push(ruutu2);
+                }
             }
-            if (taulukko.getSuunta() || this.isKuningas()) { // Suunta == vaaka
-                sallitut.push(this.getRuutu().lisaaVektori(new Vektori(-i, pelaaja)));
-                sallitut.push(this.getRuutu().lisaaVektori(new Vektori(i, pelaaja)));
+            if (taulukko.getSuunta()) { // Suunta == vaaka
+                var ruutu1 = this.getRuutu().lisaaVektori(new Vektori(-i, pelaaja * i));
+                var ruutu2 = this.getRuutu().lisaaVektori(new Vektori(i, pelaaja * i));
+                if (ruutu1) sallitut.push(ruutu1);
+                if (ruutu2) sallitut.push(ruutu2);
+
+                if (this.isKuningas()) {
+                    var ruutu1 = this.getRuutu().lisaaVektori(new Vektori(-i, pelaaja * -i));
+                    var ruutu2 = this.getRuutu().lisaaVektori(new Vektori(i, pelaaja * -i));
+                    if (ruutu1) sallitut.push(ruutu1);
+                    if (ruutu2) sallitut.push(ruutu2);
+                }
             }
         }
         
@@ -495,7 +513,6 @@ function luoNappula(vari, kuningasVari, valittuVari, pelaaja) {
      */
     nappula.voiSiirtaa = function(ruutu) {
         var nykyinenRuutu = this.getRuutu();
-        // var haluttuSuunta = nykyinenRuutu.laskeVektori(ruutu);
 
         if (!ruutu.isVapaa()) return false;
 
@@ -533,7 +550,7 @@ function luoNappula(vari, kuningasVari, valittuVari, pelaaja) {
             
             var suunta = nykyinenRuutu.laskeVektori(vihollisenRuutu);
             var hyppyRuutu = vihollisenRuutu.lisaaVektori(suunta);
-            if (hyppyRuutu && hyppyRuutu.isVapaa()) {
+            if (hyppyRuutu && this.voiSiirtaa(hyppyRuutu)) {
                 return true;
             }
         }
@@ -582,9 +599,13 @@ function luoNappula(vari, kuningasVari, valittuVari, pelaaja) {
         if (this.getRuutu().laskeVektori(ruutu).getPituus() >= 2) {
             var syotava = this.getSyotavaNappula(ruutu);
             if (syotava) syotava.parentNode.poistaNappula();
+            ruutu.appendChild(this);
             if (!this.voiSyoda()) {
                 this.paataVuoro();
                 return;
+            }
+            else {
+                this.estaNappulanVaihto();
             }
         }
     };
@@ -595,11 +616,35 @@ function luoNappula(vari, kuningasVari, valittuVari, pelaaja) {
      */
     nappula.paataVuoro = function() {
         if (this === valittuPelinappula) {
+            if (this.getSallitutRuudut(1).length === 0) this.muutaKuninkaaksi();
             this.poistaValinta();
+            this.salliNappulanVaihto();
             valittuPelinappula = null;
         }
         
         document.getElementById("vuoro-osoitin").vaihdaVuoroa();
+    };
+    
+    /**
+     * Estää nappulan vaihtamisen.
+     */
+    nappula.estaNappulanVaihto = function() {
+        this.voiVaihtaa = false;
+    };
+    
+    /**
+     * Sallii nappulan vaihtamisen.
+     */
+    nappula.salliNappulanVaihto = function() {
+        this.voiVaihtaa = true;
+    };
+    
+    /**
+     * Antaa tiedon, voiko pelinappulaa vaihtaa.
+     * @return true, jos pelinappulan vaihto on mahdollista.
+     */
+    nappula.voiVaihtaaToiseen = function() {
+        return this.voiVaihtaa;
     };
     
     /**
@@ -620,7 +665,6 @@ function luoNappula(vari, kuningasVari, valittuVari, pelaaja) {
         var taulukko = document.getElementsByTagName("body")[0].getElementsByTagName("table")[0];
         var vihollisenNappulat = [];
         
-        // Tammessa nappuloita voi olla vain kulmittaisissa ruuduissa
         var rivit = [-1, 1];
         var sarakkeet = [-1, 1];
         
@@ -724,7 +768,11 @@ function pelinappulaaKlikattu(event) {
     if (!nappula || nappula.nodeName.toLowerCase() !== "svg") return;
     
     var vuoroOsoitin = document.getElementById("vuoro-osoitin");
-    if (vuoroOsoitin.isVuoro(nappula.getPelaaja())) {
+    var liikuteltavat = vuoroOsoitin.getLiikuteltavatNappulat();
+    
+    var vaihtoMahdollinen = !valittuPelinappula || valittuPelinappula.voiVaihtaaToiseen();
+    var liikuttaminenMahdollinen = liikuteltavat.includes(nappula);
+    if (liikuttaminenMahdollinen && vaihtoMahdollinen) {
         if (valittuPelinappula) valittuPelinappula.poistaValinta();
         nappula.valitse();
         valittuPelinappula = nappula;
@@ -739,12 +787,25 @@ function pelinappulaaKlikattu(event) {
  * @return Luotu virheilmoituselementti.
  */
 function luoVirheilmoitus(id, teksti) {
-    var virheilmoitus = document.createElement("span");
-    virheilmoitus.setAttribute("id", id);
+    var virheilmoitus = luoIlmoitus(id, teksti);
     virheilmoitus.setAttribute("class", "virhe");
-    virheilmoitus.appendChild(document.createTextNode(teksti));
     
     return virheilmoitus;
+}
+
+
+/**
+ * Luo ilmoituselementin annetulla id:llä ja tekstillä
+ * @param id Ilmoituselementin id.
+ * @param teksti Ilmoituselementin sisältämä teksti.
+ * @return Luotu ilmoituselementti.
+ */
+function luoIlmoitus(id, teksti) {
+    var ilmoitus = document.createElement("span");
+    ilmoitus.setAttribute("id", id);
+    ilmoitus.appendChild(document.createTextNode(teksti));
+    
+    return ilmoitus;
 }
 
 
@@ -775,7 +836,7 @@ function etsiValittu(radiot) {
  */
 function sovitaNayttoon() {
     var body = document.getElementById("ruudukko").parentNode;
-    var vuoroOsoitin = document.getElementById("vuoro-osoitin");
+    var vuoroOsoitinDiv = document.getElementById("vuoro-osoitin").parentNode;
     
     var leveys = window.innerWidth;
     var korkeus = window.innerHeight;
@@ -786,7 +847,7 @@ function sovitaNayttoon() {
     
     var lapset = body.children;
     for (var i = 0; i < lapset.length; i++) {
-        if (lapset[i] === vuoroOsoitin) continue;
+        if (lapset[i] === vuoroOsoitinDiv) continue;
         
         var tyyli = window.getComputedStyle(lapset[i]);
         if (!tyyli) continue;
@@ -848,6 +909,8 @@ function naytaVuoro() {
  * @return Uusi vuoro-osoitin.
  */
 function luoVuoroOsoitin() {
+    var body = document.getElementsByTagName("body")[0];
+
     var varit = ["red", "blue"];
     
     var vuoroOsoitin = luoYmpyra(varit[0], 30);
@@ -862,6 +925,12 @@ function luoVuoroOsoitin() {
         
         this.vuoro = 1 - this.vuoro; // Vaihtaa 0 -> 1, 1 -> 0
         this.vaihdaVaria(varit[this.vuoro]);
+        
+        if (this.getLiikuteltavatNappulat().length === 0) {
+            var voittaja = 1 - this.vuoro;
+            this.naytaVoittaja(voittaja);
+            this.vaihdaVaria(varit[voittaja]);
+        }
     };
     
     /**
@@ -870,6 +939,9 @@ function luoVuoroOsoitin() {
     vuoroOsoitin.alusta = function() {
         this.vuoro = 0;
         this.vaihdaVaria(varit[this.vuoro]);
+        
+        var voittoIlmoitus = document.getElementById("voitto-ilmoitus");
+        if (voittoIlmoitus) voittoIlmoitus.parentNode.removeChild(voittoIlmoitus);
     };
     
     /**
@@ -881,10 +953,50 @@ function luoVuoroOsoitin() {
         return this.vuoro === pelaaja;
     };
     
+    /**
+     * Palauttaa taulukon kaikista pelinappuloista, joita voi tällä
+     * vuorolla liikuttaa.
+     * @return Taulukko kaikista tällä vuorolla liikuteltavista pelinappuloista.
+     */
+    vuoroOsoitin.getLiikuteltavatNappulat = function() {
+        var taulukko = body.getElementsByTagName("table")[0];
+        var kaikki = taulukko.getKaikkiNappulat();
+        var pelaajan = [];
+        var syovat = [];
+        
+        for (var i = 0; i < kaikki.length; i++) {
+            var nappula = kaikki[i];
+            if (this.isVuoro(nappula.getPelaaja())) {
+                pelaajan.push(nappula);
+                
+                if (nappula.voiSyoda()) {
+                    syovat.push(nappula);
+                }
+            }
+        }
+        
+        if (syovat.length > 0) return syovat;
+        return pelaajan;
+    };
+    
+    /**
+     * Näyttää annetun pelaajan voittajana käyttäjälle.
+     * @param voittaja Pelin voittaja. (0 = pelaaja 1, 1 = pelaaja 2)
+     */
+    vuoroOsoitin.naytaVoittaja = function(voittaja) {
+        var voittoIlmoitus = document.getElementById("voitto-ilmoitus");
+        if (!voittoIlmoitus)
+            voittoIlmoitus = luoIlmoitus("voitto-ilmoitus", "Pelaaja " + (voittaja + 1) + " voitti pelin!");
+        
+        if (voittaja) voittoIlmoitus.setAttribute("class", "sininen");
+        else voittoIlmoitus.setAttribute("class", "punainen");
+        
+        this.parentNode.insertBefore(voittoIlmoitus, this);
+    };
+    
     var div = document.createElement("div");
     div.appendChild(vuoroOsoitin);
     
-    var body = document.getElementsByTagName("body")[0];
     body.appendChild(div);
 
     return vuoroOsoitin;
