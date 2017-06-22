@@ -529,7 +529,7 @@ function luoNappula(vari, kuningasVari, valittuVari, pelaaja) {
 
         if (!ruutu.isVapaa()) return false;
 
-        if (!this.getSallitutRuudut(2).includes(ruutu)) return false;
+        if (this.getSallitutRuudut(2).indexOf(ruutu) === -1) return false;
         
         if (this.isNappuloitaVieressa()) {
             var vihollisenNappulat = this.getNappulatVieressa();
@@ -543,7 +543,7 @@ function luoNappula(vari, kuningasVari, valittuVari, pelaaja) {
                 }
             }
         }
-        if (this.getSallitutRuudut(1).includes(ruutu)) return true;
+        if (this.getSallitutRuudut(1).indexOf(ruutu) !== -1) return true;
         return false;
     };
     
@@ -784,7 +784,7 @@ function pelinappulaaKlikattu(event) {
     var liikuteltavat = vuoroOsoitin.getLiikuteltavatNappulat();
     
     var vaihtoMahdollinen = !valittuPelinappula || valittuPelinappula.voiVaihtaaToiseen();
-    var liikuttaminenMahdollinen = liikuteltavat.includes(nappula);
+    var liikuttaminenMahdollinen = liikuteltavat.indexOf(nappula) !== -1;
     if (liikuttaminenMahdollinen && vaihtoMahdollinen) {
         if (valittuPelinappula) valittuPelinappula.poistaValinta();
         nappula.valitse();
