@@ -1,3 +1,8 @@
+/**
+ * JavaScriptilla toteutettu selaimessa toimiva tammipeli
+ * @author Joonatan Kallio
+ */
+
 "use strict";
 
 var minLeveys = 8;
